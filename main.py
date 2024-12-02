@@ -1,8 +1,25 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
+import json
+import os
 
-# Хранилище для расписания (пока в памяти)
+# Хранилище для расписания (загружается из файла при старте)
+SCHEDULE_FILE = "schedule.txt"
 schedule = {}
+
+# Функция для загрузки расписания из файла
+def load_schedule():
+    global schedule
+    if os.path.exists(SCHEDULE_FILE):
+        with open(SCHEDULE_FILE, "r", encoding="utf-8") as file:
+            schedule = json.load(file)
+    else:
+        schedule = {}
+
+# Функция для сохранения расписания в файл
+def save_schedule():
+    with open(SCHEDULE_FILE, "w", encoding="utf-8") as file:
+        json.dump(schedule, file, ensure_ascii=False, indent=4)
 
 # Команда /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -36,6 +53,7 @@ async def change_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Обновление расписания
         schedule[day] = {"active": active_time, "inactive": inactive_time}
+        save_schedule()  # Сохраняем расписание после изменения
         await update.message.reply_text(
             f"Расписание для {day.capitalize()} обновлено:\nActive: {active_time}\nInactive: {inactive_time}"
         )
@@ -44,6 +62,9 @@ async def change_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Основная функция
 def main():
+    # Загружаем расписание из файла
+    load_schedule()
+
     # Ваш токен от BotFather
     TOKEN = "7458392842:AAEg1PE5ll2UDybWyyUkNdrOPM8V3ZcHSho"
     # TOKEN = "TEST"
